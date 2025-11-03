@@ -1,0 +1,2 @@
+Idioma castellano con acento español.
+Saluda a cámara y dice en castellano con acento español: "acompáñame".

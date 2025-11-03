@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Prompts</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Fuente Inter de Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Estilo personalizado para el checkbox */
+        .form-checkbox:checked {
+            background-color: #4f46e5; /* Color índigo */
+            border-color: #4f46e5;
+        }
+        /* Estilos para modo oscuro */
+        body {
+            background-color: #111827; /* gray-900 */
+            color: #d1d5db; /* gray-300 */
+        }
+        .container-bg {
+            background-color: #1f2937; /* gray-800 */
+        }
+        .section-bg {
+            background-color: #374151; /* gray-700 */
+        }
+        .input-bg {
+            background-color: #4b5563; /* gray-600 */
+            border-color: #6b7280; /* gray-500 */
+        }
+        .input-bg:disabled {
+            background-color: #374151; /* gray-700 */
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- CAMBIO: Ancho máximo aumentado de max-w-2xl a max-w-6xl -->
+    <div class="max-w-6xl mx-auto container-bg p-6 md:p-8 rounded-2xl shadow-2xl">
+        
+        <!-- Título -->
+        <h1 class="text-3xl font-bold text-center mb-2 text-indigo-400">
+            Generador de Prompts
+        </h1>
+        <p class="text-center text-gray-400 mb-8">
+            Activa y selecciona las partes que quieres incluir en tu prompt.
+        </p>
+
+        <!-- Contenedor para las secciones dinámicas -->
+        <div id="prompt-sections" class="space-y-6">
+            <!-- Las secciones se generarán aquí con JavaScript -->
+        </div>
+
+        <!-- Botón de Generar -->
+        <button id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg mt-8 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75">
+            Generar Prompt
+        </button>
+
+        <!-- Área de Resultado (oculta por defecto) -->
+        <div id="output-container" class="mt-8" style="display: none;">
+            <label for="prompt-output" class="block text-sm font-medium text-gray-300 mb-2">Tu prompt generado:</label>
+            <textarea id="prompt-output" rows="5" class="w-full p-3 input-bg text-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500" readonly></textarea>
+            <button id="copy-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg mt-4 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75">
+                Copiar al Portapapeles
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Espera a que el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Obtener referencias a los elementos del DOM
+            const sectionsContainer = document.getElementById('prompt-sections');
+            const generateBtn = document.getElementById('generate-btn');
+            const outputContainer = document.getElementById('output-container');
+            const outputText = document.getElementById('prompt-output');
+            const copyBtn = document.getElementById('copy-btn');
+
+            // --- FUNCIONES ASÍNCRONAS ---
+
+            /**
+             * Carga frases desde un archivo .txt
+             * @param {string} file - La ruta al archivo (ej. "1.txt")
+             * @returns {Promise<string[]>} Un array de frases
+             */
+            async function loadPhrases(file) {
+              try {
+                const response = await fetch(file);
+                if (!response.ok) {
+                    // Lanza un error si el archivo no se encuentra o hay otro problema
+                    throw new Error(`No se pudo cargar ${file}. Estado: ${response.status}`);
+                }
+                const text = await response.text();
+                // Divide por saltos de línea y filtra líneas vacías
+                return text.split('\n').filter(line => line.trim() !== '');
+              } catch (error) {
+                console.error(error);
+                // Retorna un array con el error para mostrarlo en el dropdown
+                return [`Error al cargar ${file}`];
+              }
+            }
+
+            // Definir las secciones y sus archivos .txt
+            const sectionsConfig = {
+                section1: { title: "1. Acción X", file: "1.txt" },
+                section2: { title: "2. Cambios Sujeto Principal", file: "2.txt" },
+                section3: { title: "3. Tipo Cuerpo", file: "3.txt" },
+                section4: { title: "4. Tipo de pechos y pezones", file: "4.txt" },
+                section5: { title: "5. Mirada", file: "5.txt" },
+                section6: { title: "6. Voz", file: "6.txt" },
+                section7: { title: "7. Acción 1", file: "acciones.txt" },
+                section8: { title: "8. Acción 2", file: "acciones.txt" },
+                section9: { title: "9. Acción 3", file: "acciones.txt" }
+            };
+
+            // --- 1. Inicializar la UI ---
+            /**
+             * Construye las secciones de forma asíncrona,
+             * cargando los datos desde los archivos .txt
+             */
+            async function initializeUI() {
+                // Usamos for...of para poder usar await dentro del bucle
+                for (const [key, data] of Object.entries(sectionsConfig)) {
+                    // key es "section1", "section2", etc.
+                    // data es { title: "...", file: "..." }
+
+                    // Cargar las frases desde el archivo
+                    const phrases = await loadPhrases(data.file);
+
+                    // --- LÓGICA MODIFICADA ---
+                    // Comprobar si esta sección debe estar marcada por defecto
+                    // Extraer el número de la key (ej. "section1" -> 1)
+                    const sectionNumber = parseInt(key.replace('section', ''), 10);
+                    const isCheckedByDefault = sectionNumber >= 1 && sectionNumber <= 7;
+
+                    const checkedAttr = isCheckedByDefault ? 'checked' : '';
+                    const disabledAttr = isCheckedByDefault ? '' : 'disabled';
+                    // --- FIN LÓGICA MODIFICADA ---
+
+                    // Crear el contenedor para la sección
+                    const sectionEl = document.createElement('div');
+                    sectionEl.className = 'section-bg p-4 rounded-lg shadow-md';
+
+                    // Crear el HTML interno para las opciones del select
+                    let optionsHTML = '<option value="">-- Elige una frase --</option>';
+                    phrases.forEach(phrase => {
+                        // Asegurarse de que la frase no esté vacía
+                        if (phrase.trim()) {
+                            optionsHTML += `<option value="${phrase}">${phrase}</option>`;
+                        }
+                    });
+
+                    // Crear el HTML completo de la sección
+                    sectionEl.innerHTML = `
+                        <label for="check-${key}" class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="check-${key}" data-target="select-${key}" class="form-checkbox h-5 w-5 text-indigo-600 bg-gray-600 border-gray-500 rounded focus:ring-indigo-500" ${checkedAttr}>
+                            <span class="ml-3 text-lg font-semibold text-white">${data.title}</span>
+                        </label>
+                        
+                        <select id="select-${key}" class="w-full p-2 mt-3 input-bg text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" ${disabledAttr}>
+                            ${optionsHTML}
+                        </select>
+                    `;
+
+                    // Añadir la sección creada al contenedor principal
+                    sectionsContainer.appendChild(sectionEl);
+
+                    // --- LÓGICA AÑADIDA PARA CORREGIR EL BUG ---
+                    // Si la sección está marcada por defecto, seleccionar la primera opción
+                    if (isCheckedByDefault) {
+                        const selectEl = sectionEl.querySelector(`#select-${key}`);
+                        if (selectEl && selectEl.options.length > 1) {
+                            selectEl.selectedIndex = 1; // 0 es el placeholder "-- Elige una frase --"
+                        }
+                    }
+                    // --- FIN LÓGICA AÑADIDA ---
+                }
+            }
+
+            // --- 2. Configurar Event Listeners ---
+
+            // Habilitar/deshabilitar dropdowns al marcar/desmarcar checkboxes
+            sectionsContainer.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox') {
+                    const targetSelectId = e.target.dataset.target;
+                    const selectEl = document.getElementById(targetSelectId);
+                    
+                    if (selectEl) {
+                        selectEl.disabled = !e.target.checked;
+
+                        // --- LÓGICA MODIFICADA ---
+                        if (e.target.checked) {
+                            // Si se marca y tiene al menos una opción real, seleccionar la primera
+                            if (selectEl.options.length > 1) {
+                                selectEl.selectedIndex = 1; // 0 es el placeholder "-- Elige una frase --"
+                            }
+                        } else {
+                            // Si se desmarca, resetear la selección
+                            selectEl.selectedIndex = 0;
+                        }
+                        // --- FIN LÓGICA MODIFICADA ---
+                    }
+                }
+            });
+
+            // Acción del botón "Generar Prompt"
+            generateBtn.addEventListener('click', () => {
+                const selectedPhrases = [];
+                
+                // Recorrer todos los checkboxes
+                const checkboxes = sectionsContainer.querySelectorAll('input[type="checkbox"]');
+                
+                checkboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        const targetSelectId = checkbox.dataset.target;
+                        const selectEl = document.getElementById(targetSelectId);
+                        
+                        // Añadir la frase solo si se ha seleccionado una opción válida (no el "-- Elige --")
+                        if (selectEl && selectEl.value) {
+                            selectedPhrases.push(selectEl.value);
+                        }
+                    }
+                });
+
+                // Unir las frases (puedes cambiar ", " por " " o lo que prefieras)
+                const finalPrompt = selectedPhrases.join(', ');
+
+                // Mostrar el resultado en el área de output original (la de copiar)
+                if (finalPrompt) {
+                    outputText.value = finalPrompt;
+                    outputContainer.style.display = 'block';
+                } else {
+                    // Opcional: ocultar si no se seleccionó nada
+                    outputContainer.style.display = 'none';
+                    outputText.value = '';
+                }
+            });
+
+            // Acción del botón "Copiar"
+            copyBtn.addEventListener('click', () => {
+                outputText.select();
+                // document.execCommand('copy') es más robusto en iframes que navigator.clipboard
+                try {
+                    document.execCommand('copy');
+                    copyBtn.textContent = '¡Copiado!';
+                    copyBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    copyBtn.classList.add('bg-blue-500'); // Feedback visual
+                    
+                    // Volver al texto original después de 2 segundos
+                    setTimeout(() => {
+                        copyBtn.textContent = 'Copiar al Portapapeles';
+                        copyBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                        copyBtn.classList.remove('bg-blue-500');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Error al copiar:', err);
+                    copyBtn.textContent = 'Error al copiar';
+                }
+            });
+
+            // --- 3. Iniciar la aplicación ---
+            // Llamamos a la función asíncrona de inicialización
+            initializeUI().catch(error => {
+                // Captura cualquier error fatal durante la inicialización
+                console.error("Error fatal al inicializar la UI:", error);
+                sectionsContainer.innerHTML = '<p class="text-red-400">Error general al cargar la aplicación. Revisa la consola para más detalles.</p>';
+            });
+        });
+    </script>
+
+</body>
+</html>
+
+
+
+
+
