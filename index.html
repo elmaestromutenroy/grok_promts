@@ -138,7 +138,8 @@
                     // Comprobar si esta sección debe estar marcada por defecto
                     // Extraer el número de la key (ej. "section1" -> 1)
                     const sectionNumber = parseInt(key.replace('section', ''), 10);
-                    const isCheckedByDefault = sectionNumber >= 1 && sectionNumber <= 7;
+                    // const isCheckedByDefault = sectionNumber >= 1 && sectionNumber <= 7;
+                    const isCheckedByDefault = sectionNumber >= 10 && sectionNumber <= 70;
 
                     const checkedAttr = isCheckedByDefault ? 'checked' : '';
                     const disabledAttr = isCheckedByDefault ? '' : 'disabled';
@@ -277,6 +278,7 @@
 
 </body>
 </html>
+
 
 
 
