@@ -183,7 +183,7 @@
                 // Usamos Promise.all para cargar todos los archivos en paralelo
                 await Promise.all(options.map(async (opt) => {
                     // Construimos la URL completa
-                    const fileName = `${baseUrl}${opt.value}.txt`; 
+                    const fileName = `${opt.value}.txt`; //`${baseUrl}${opt.value}.txt`; 
                                                                         
                     const label = document.querySelector(`label[for="${opt.labelFor}"]`);
                     
@@ -295,3 +295,4 @@
     </script>
 </body>
 </html>
+
