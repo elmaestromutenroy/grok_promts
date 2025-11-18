@@ -64,16 +64,16 @@
             </select>
         </div>
         
-        <!-- Área de Texto -->
+        <!-- Área de Texto (Otros datos) -->
         <div class="mb-6">
             <label for="descripcion" class="block text-lg font-semibold text-gray-700 mb-2">
-                Descripción de la persona
+                Otros datos
             </label>
             <textarea
                 id="descripcion"
                 rows="6"
                 class="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                placeholder="Escribe aquí los detalles..."
+                placeholder="Escribe aquí cualquier detalle adicional..."
             ></textarea>
         </div>
 
@@ -123,7 +123,6 @@
     </div>
 
     <script>
-        // SCRIPT COMPLETO Y CORREGIDO
         window.addEventListener('DOMContentLoaded', () => {
             const descripcionEl = document.getElementById('descripcion');
             const constitucionEl = document.getElementById('constitucion');
@@ -221,31 +220,8 @@
             }
             // --- FIN DE CARGA DE TOOLTIPS ---
 
-            // --- Event listener para el desplegable Constitución ---
-            constitucionEl.addEventListener('change', () => {
-                const selectedText = constitucionEl.value;
-                if (selectedText) { // Nos aseguramos de que no sea la opción "Selecciona una..."
-                    descripcionEl.value += `Constitución corporal ${selectedText}. `;
-                }
-            });
-
-            // --- Event listener para el desplegable Pechos ---
-            pechosEl.addEventListener('change', () => {
-                const selectedText = pechosEl.value;
-                if (selectedText) { // Nos aseguramos de que no sea la opción "Selecciona una..."
-                    descripcionEl.value += `Tiene ${selectedText}. `;
-                }
-            });
-
-            // --- Event listener para el desplegable camara ---
-            // CORREGIDO: Ahora escucha a 'camaraEl', no a 'pechosEl'
-            camaraEl.addEventListener('change', () => {
-                const selectedText = camaraEl.value;
-                if (selectedText) { // Nos aseguramos de que no sea la opción "Selecciona una..."
-                    descripcionEl.value += `${selectedText}. `;
-                }
-            });
-            
+																								  
+			
             // --- Función para copiar al portapapeles ---
             function copyToClipboard(text) {
                 const tempTextarea = document.createElement('textarea');
@@ -276,20 +252,32 @@
                 const selectedValue = selectedOption.value;
 
                 // 2. Obtener el contenido base
-                const baseContent = fileContents[selectedValue] ? fileContents[selectedValue] + " " : "";
-
-                // 3. Obtener el texto del textarea
-                const descripcionText = descripcionEl.value;
-
-                // 4. Combinar los textos
-                let finalText = baseContent + descripcionText; // <-- Cambiado a let
-
-                // 5. AÑADIR TEXTO DEL CHECKBOX
-                if (cuerpoNaturalEl.checked) {
-                    finalText += " Su cuerpo tiene pecas e imperfecciones. ";
+                // Usamos trim() para quitar espacios extra y añadimos \n
+                let baseContent = fileContents[selectedValue] || "";
+                if (baseContent) {
+                    baseContent = baseContent.trim() + "\n";
                 }
 
-                // 6. Copiar al portapapeles
+                // 3. Obtener Cámara con salto de línea
+                const camaraVal = camaraEl.value ? camaraEl.value + ".\n" : "";
+
+                // 4. Obtener Constitución con salto de línea
+                const constitucionVal = constitucionEl.value ? `Constitución corporal ${constitucionEl.value}.\n` : "";
+
+                // 5. Obtener Pechos con salto de línea
+                const pechosVal = pechosEl.value ? `Tiene ${pechosEl.value}.\n` : "";
+
+                // 6. Obtener Cuerpo Natural con salto de línea
+                const cuerpoNaturalVal = cuerpoNaturalEl.checked ? "Su cuerpo tiene pecas e imperfecciones.\n" : "";
+
+                // 7. Obtener Otros datos (textarea)
+                const otrosDatosVal = descripcionEl.value ? descripcionEl.value : "";
+
+                // 8. Combinar en el orden solicitado:
+                // Base + camara + constitucion corporal + pechos + cuerpo natural + Otros datos
+                let finalText = baseContent + camaraVal + constitucionVal + pechosVal + cuerpoNaturalVal + otrosDatosVal;
+
+                // 9. Copiar al portapapeles
                 copyToClipboard(finalText);
             });
 
