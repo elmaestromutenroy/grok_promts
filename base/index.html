@@ -36,7 +36,7 @@
             </select>
         </div>
 
-        <!-- NUEVO: Desplegable de Pechos -->
+        <!-- Desplegable de Pechos -->
         <div class="mb-6">
             <label for="pechos" class="block text-lg font-semibold text-gray-700 mb-2">
                 Pechos
@@ -50,6 +50,20 @@
             </select>
         </div>
 
+        <!-- Desplegable de camara -->
+        <div class="mb-6">
+            <label for="camara" class="block text-lg font-semibold text-gray-700 mb-2">
+                Cámara
+            </label>
+            <select id="camara" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white">
+                <option value="" selected disabled>Selecciona una...</option>
+                <option value="La cámara permanece estática">1: La cámara permanece estática</option>
+                <option value="La cámara se aleja">2: La cámara se aleja</option>
+                <option value="La cámara se acerca">3: La cámara se acerca</option>
+                <option value="La cámara se acerca con detalle">4: La cámara se acerca con detalle</option>
+            </select>
+        </div>
+        
         <!-- Área de Texto -->
         <div class="mb-6">
             <label for="descripcion" class="block text-lg font-semibold text-gray-700 mb-2">
@@ -63,28 +77,34 @@
             ></textarea>
         </div>
 
+        <!-- Checkbox Cuerpo Natural -->
+        <div class="mb-4">
+            <label for="cuerpoNatural" class="flex items-center cursor-pointer w-max">
+                <input type="checkbox" id="cuerpoNatural" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" checked>
+                <span class="ml-3 text-md font-medium text-gray-800">Cuerpo Natural</span>
+            </label>
+        </div>
+
         <!-- Opciones de Radio -->
         <div class="mb-8">
             <!-- Título del grupo cambiado a "BASE" -->
             <label class="block text-lg font-semibold text-gray-700 mb-3">BASE</label>
             <div class="space-y-3">
-                <!-- Opción BASE eliminada -->
-                
-                <!-- Opción 1 (ahora marcada por defecto) -->
+                <!-- Opción 1 (marcada por defecto) -->
                 <!-- El atributo 'title' se rellenará con JavaScript -->
-                <label for="opt-1" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+                <label for="opt-1" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer" title="Cargando...">
                     <input type="radio" id="opt-1" name="base_option" value="1" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300" checked>
                     <span class="ml-3 text-md font-medium text-gray-800">Base 1</span>
                 </label>
 
                 <!-- Opción 2 -->
-                <label for="opt-2" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+                <label for="opt-2" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer" title="Cargando...">
                     <input type="radio" id="opt-2" name="base_option" value="2" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300">
                     <span class="ml-3 text-md font-medium text-gray-800">Base 2</span>
                 </label>
 
                 <!-- Opción 3 -->
-                <label for="opt-3" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+                <label for="opt-3" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer" title="Cargando...">
                     <input type="radio" id="opt-3" name="base_option" value="3" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300">
                     <span class="ml-3 text-md font-medium text-gray-800">Base 3</span>
                 </label>
@@ -103,55 +123,101 @@
     </div>
 
     <script>
+        // SCRIPT COMPLETO Y CORREGIDO
         window.addEventListener('DOMContentLoaded', () => {
             const descripcionEl = document.getElementById('descripcion');
             const constitucionEl = document.getElementById('constitucion');
-            const pechosEl = document.getElementById('pechos'); // <-- NUEVO: Elemento Pechos
+            const pechosEl = document.getElementById('pechos');
+            const camaraEl = document.getElementById('camara');
+            const cuerpoNaturalEl = document.getElementById('cuerpoNatural'); 
             const generarBtn = document.getElementById('generarBtn');
             const messageBox = document.getElementById('messageBox');
 
             // Objeto para almacenar el contenido de los archivos
             const fileContents = {};
 
-            // --- INICIO DE CARGA DE TOOLTIPS ---
-            // Función para cargar los tooltips y preparar el contenido
+            // Función para mostrar mensajes
+            function showMessage(text, isError = false) {
+                messageBox.textContent = text;
+                messageBox.classList.remove('hidden');
+                if (isError) {
+                    messageBox.classList.remove('bg-green-100', 'text-green-800');
+                    messageBox.classList.add('bg-red-100', 'text-red-800');
+                } else {
+                    messageBox.classList.remove('bg-red-100', 'text-red-800');
+                    messageBox.classList.add('bg-green-100', 'text-green-800');
+                }
+                // Ocultar mensaje después de 3 segundos, excepto si es de carga
+                if (!text.includes('Cargando')) {
+                    setTimeout(() => {
+                        messageBox.classList.add('hidden');
+                    }, 3000);
+                }
+            }
+
+            // --- FUNCIÓN DE CARGA DE TOOLTIPS ---
             async function loadTooltipsAndContent() {
+                // URL Hardcoded
+                const baseUrl = "https://raw.githubusercontent.com/elmaestromutenroy/grok_promts/master/base/";
+
                 const options = [
                     { value: '1', labelFor: 'opt-1' },
                     { value: '2', labelFor: 'opt-2' },
                     { value: '3', labelFor: 'opt-3' }
                 ];
 
+                let allLoaded = true;
+
+                // Mostrar estado de carga y deshabilitar botón
+                showMessage('Cargando archivos base...', false);
+                generarBtn.disabled = true;
+                generarBtn.textContent = 'Cargando...';
+                generarBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
                 // Usamos Promise.all para cargar todos los archivos en paralelo
                 await Promise.all(options.map(async (opt) => {
-                    const fileName = `${opt.value}.txt`;
-                    // Buscamos la etiqueta <label> por su atributo 'for'
+                    // Construimos la URL completa
+                    const fileName = `${baseUrl}${opt.value}.txt`; 
+                                                                        
                     const label = document.querySelector(`label[for="${opt.labelFor}"]`);
                     
                     try {
-                        const response = await fetch(fileName);
+                        // Añadimos 'cache: "no-store"' para evitar problemas de caché
+                        const response = await fetch(fileName, { cache: "no-store" }); 
                         if (!response.ok) {
-                            throw new Error(`Estado: ${response.status}`);
+                            throw new Error(`Error ${response.status} al cargar ${fileName}`);
                         }
                         const text = await response.text();
                         
-                        // Almacenar contenido para el botón de generar
                         fileContents[opt.value] = text; 
                         
-                        // Asignar al tooltip (title attribute) de la etiqueta
                         if (label) {
                             label.title = text;
                         }
                         
                     } catch (err) {
-                        console.error(`Error al cargar ${fileName}: ${err.message}`);
+                        console.error(err.message);
+                        allLoaded = false;
                         if (label) {
-                            label.title = `Error al cargar el contenido de ${fileName}`;
+                            label.title = `Error al cargar: ${err.message}`;
                         }
-                        // Guardamos un texto de error para que el botón lo muestre si se selecciona
-                        fileContents[opt.value] = `[Error al cargar ${fileName}]`; 
+                        fileContents[opt.value] = `[Error al cargar ${opt.value}.txt]`; 
                     }
                 }));
+
+                // Actualizar UI después de la carga
+                if (allLoaded) {
+                    showMessage('¡Archivos cargados! Listo.', false);
+                    generarBtn.disabled = false;
+                    generarBtn.textContent = 'Generar y Copiar';
+                    generarBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    showMessage('Error al cargar archivos. Revisa la consola.', true);
+                    generarBtn.textContent = 'Error de carga';
+                    // El botón permanece deshabilitado
+                }
+
+                return allLoaded;
             }
             // --- FIN DE CARGA DE TOOLTIPS ---
 
@@ -159,23 +225,29 @@
             constitucionEl.addEventListener('change', () => {
                 const selectedText = constitucionEl.value;
                 if (selectedText) { // Nos aseguramos de que no sea la opción "Selecciona una..."
-                    // Añade al textarea, sin sobrescribir
                     descripcionEl.value += `Constitución corporal ${selectedText}. `;
                 }
             });
 
-            // --- NUEVO: Event listener para el desplegable Pechos ---
+            // --- Event listener para el desplegable Pechos ---
             pechosEl.addEventListener('change', () => {
                 const selectedText = pechosEl.value;
                 if (selectedText) { // Nos aseguramos de que no sea la opción "Selecciona una..."
-                    // Añade al textarea, sin sobrescribir
                     descripcionEl.value += `Tiene ${selectedText}. `;
                 }
             });
 
-            // Función para copiar al portapapeles (sin cambios)
+            // --- Event listener para el desplegable camara ---
+            // CORREGIDO: Ahora escucha a 'camaraEl', no a 'pechosEl'
+            camaraEl.addEventListener('change', () => {
+                const selectedText = camaraEl.value;
+                if (selectedText) { // Nos aseguramos de que no sea la opción "Selecciona una..."
+                    descripcionEl.value += `${selectedText}. `;
+                }
+            });
+            
+            // --- Función para copiar al portapapeles ---
             function copyToClipboard(text) {
-                // Usamos el método 'execCommand' que es más fiable en entornos de iframe
                 const tempTextarea = document.createElement('textarea');
                 tempTextarea.value = text;
                 tempTextarea.style.position = 'absolute';
@@ -184,63 +256,47 @@
                 tempTextarea.select();
                 try {
                     document.execCommand('copy');
-                    // Mostrar mensaje de éxito
-                    messageBox.textContent = '¡Texto combinado copiado al portapapeles!';
-                    messageBox.classList.remove('hidden');
-                    messageBox.classList.remove('bg-red-100', 'text-red-800');
-                    messageBox.classList.add('bg-green-100', 'text-green-800');
+                    showMessage('¡Texto combinado copiado al portapapeles!', false);
                 } catch (err) {
                     console.error('Error al copiar al portapapeles: ', err);
-                    // Mostrar mensaje de error
-                    messageBox.textContent = 'Error al copiar. Revisa la consola.';
-                    messageBox.classList.remove('hidden');
-                    messageBox.classList.remove('bg-green-100', 'text-green-800');
-                    messageBox.classList.add('bg-red-100', 'text-red-800');
+                    showMessage('Error al copiar. Revisa la consola.', true);
                 }
                 document.body.removeChild(tempTextarea);
-
-                // Ocultar el mensaje después de 3 segundos
-                setTimeout(() => {
-                    messageBox.classList.add('hidden');
-                }, 3000);
             }
 
-            // Evento click del botón (MODIFICADO)
-            generarBtn.addEventListener('click', () => { // <-- Eliminado 'async'
+            // --- Evento click del botón "Generar y Copiar" ---
+            generarBtn.addEventListener('click', () => {
                 // 1. Obtener la opción seleccionada
                 const selectedOption = document.querySelector('input[name="base_option"]:checked');
                 if (!selectedOption) {
-                    // Mostrar error si nada está seleccionado (aunque 'Opción 1' está por defecto)
-                    messageBox.textContent = 'Por favor, selecciona una opción.';
-                    messageBox.classList.remove('hidden');
-                    messageBox.classList.add('bg-red-100', 'text-red-800');
-                    setTimeout(() => { messageBox.classList.add('hidden'); }, 3000);
+                    showMessage('Por favor, selecciona una opción BASE.', true);
                     return;
                 }
                 
                 const selectedValue = selectedOption.value;
 
-                // --- LÓGICA FETCH ELIMINADA DE AQUÍ ---
-                // Ya no hay estado de 'Cargando...'
-                
-                // 2. Obtener el contenido base (desde el objeto pre-cargado)
-                // Añadimos un espacio al final si el contenido existe
+                // 2. Obtener el contenido base
                 const baseContent = fileContents[selectedValue] ? fileContents[selectedValue] + " " : "";
 
                 // 3. Obtener el texto del textarea
                 const descripcionText = descripcionEl.value;
 
                 // 4. Combinar los textos
-                const finalText = baseContent + descripcionText;
+                let finalText = baseContent + descripcionText; // <-- Cambiado a let
 
-                // 5. Copiar al portapapeles
+                // 5. AÑADIR TEXTO DEL CHECKBOX
+                if (cuerpoNaturalEl.checked) {
+                    finalText += " Su cuerpo tiene pecas e imperfecciones. ";
+                }
+
+                // 6. Copiar al portapapeles
                 copyToClipboard(finalText);
             });
 
-            // Iniciar la carga de tooltips cuando la página esté lista
+            // Llamamos a la función de carga al iniciar 
             loadTooltipsAndContent();
-        });
+            
+        }); 
     </script>
 </body>
 </html>
-
